@@ -1,17 +1,35 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { initBurner, isSidebarOpen } from './composables/useBurner'
 import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
 import MessageList from './components/MessageList.vue'
 import MessageDetail from './components/MessageDetail.vue'
 import LoadingOverlay from './components/LoadingOverlay.vue'
+import SharedEmailView from './components/SharedEmailView.vue'
 
-// Initialize all logic and listeners
-initBurner()
+const isShareMode = ref(false)
+
+onMounted(() => {
+  // Detect ?share or #encoded-data share links
+  const hash = window.location.hash
+  if (hash && hash.length > 1) {
+    isShareMode.value = true
+  }
+})
+
+// Only init the full app if not in share mode
+if (!window.location.hash || window.location.hash.length <= 1) {
+  initBurner()
+}
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-burner-dark text-burner-text font-sans selection:bg-burner-accent/30">
+  <!-- Shared Email View (standalone, no app chrome) -->
+  <SharedEmailView v-if="isShareMode" />
+
+  <!-- Normal App -->
+  <div v-else class="flex h-screen overflow-hidden bg-burner-dark text-burner-text font-sans selection:bg-burner-accent/30">
     
     <!-- Mobile Sidebar Backdrop -->
     <div v-if="isSidebarOpen" @click="isSidebarOpen = false" class="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300"></div>

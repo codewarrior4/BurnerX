@@ -278,6 +278,19 @@ export const exportEmailAsHTML = (message, htmlContent) => {
     URL.revokeObjectURL(url)
 }
 
+export const generateShareLink = (message, htmlContent) => {
+    if (!message) return null
+    const payload = {
+        subject: message.subject || '',
+        from: { name: message.from?.name || '', address: message.from?.address || '' },
+        date: message.createdAt,
+        body: htmlContent || '<p>No content</p>'
+    }
+    const encoded = btoa(encodeURIComponent(JSON.stringify(payload)))
+    const base = window.location.origin + window.location.pathname
+    return `${base}#${encoded}`
+}
+
 export const exportIdentityBackup = () => {
     const backup = {
         exportedAt: new Date().toISOString(),

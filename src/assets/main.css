@@ -14,8 +14,8 @@
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
-  --accent: #7c3aed;
-  --accent-glow: #c4b5fd;
+  --accent: #1e40af;
+  --accent-glow: #93c5fd;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
   --border-color: #e2e8f0;
@@ -25,13 +25,14 @@
 .dark {
   --bg-primary: #0a0a0b;
   --bg-secondary: #161618;
-  --accent: #8b5cf6;
-  --accent-glow: #d8b4fe;
+  --accent: #3b82f6;
+  --accent-glow: #93c5fd;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --border-color: #1e1e24;
   color-scheme: dark;
 }
+
 
 body {
   background-color: var(--bg-primary);

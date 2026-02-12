@@ -1,14 +1,26 @@
 <script setup>
 import { ref } from 'vue'
-import { ArrowLeft, Code2, Download, FileJson, FileText, ChevronDown } from 'lucide-vue-next'
+import QrcodeVue from 'qrcode.vue'
+import { ArrowLeft, Code2, Download, FileJson, FileText, ChevronDown, Share2, X, Copy, CheckCircle2 } from 'lucide-vue-next'
 import { 
   selectedMessage, messageContent, messageSource, isViewingSource, 
   fetchMessageSource, downloadAttachment, showDetailOnMobile,
-  exportEmailAsJSON, exportEmailAsHTML
+  exportEmailAsJSON, exportEmailAsHTML, generateShareLink, copyToClipboard, copyStatus
 } from '../composables/useBurner'
 import IdentityCard from './IdentityCard.vue'
 
 const showExportMenu = ref(false)
+const showShareModal = ref(false)
+const shareLink = ref('')
+
+const handleShare = () => {
+  const link = generateShareLink(selectedMessage.value, messageContent.value)
+  if (link) {
+    shareLink.value = link
+    showShareModal.value = true
+    showExportMenu.value = false
+  }
+}
 </script>
 
 <template>
@@ -34,6 +46,11 @@ const showExportMenu = ref(false)
                 <ChevronDown :class="['w-3 h-3 transition-transform', showExportMenu ? 'rotate-180' : '']" />
               </button>
               <div v-if="showExportMenu" class="absolute right-0 top-full mt-2 bg-burner-card border border-burner-border rounded-2xl shadow-2xl p-2 z-50 w-52">
+                <button @click="handleShare" class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-burner-text-dim hover:text-burner-accent hover:bg-burner-accent/10 rounded-xl transition-all">
+                  <Share2 class="w-4 h-4" />
+                  Share via QR / Link
+                </button>
+                <div class="h-px bg-burner-border my-1"></div>
                 <button @click="exportEmailAsJSON(selectedMessage); showExportMenu = false" class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-burner-text-dim hover:text-burner-accent hover:bg-burner-accent/10 rounded-xl transition-all">
                   <FileJson class="w-4 h-4" />
                   Export as JSON
@@ -115,6 +132,32 @@ const showExportMenu = ref(false)
     <!-- Central Identity Dashboard (QR + Domain Picker) -->
     <div v-else class="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
       <IdentityCard />
+    </div>
+
+    <!-- Share QR Modal -->
+    <div v-if="showShareModal" class="fixed inset-0 z-[200] flex items-center justify-center p-6" @click.self="showShareModal = false">
+      <div class="absolute inset-0 bg-black/70 backdrop-blur-md" @click="showShareModal = false"></div>
+      <div class="relative bg-burner-card border border-burner-border rounded-[2rem] p-8 shadow-2xl max-w-sm w-full z-10">
+        <button @click="showShareModal = false" class="absolute top-5 right-5 p-2 text-burner-text-dim hover:text-burner-text transition-colors">
+          <X class="w-5 h-5" />
+        </button>
+        <div class="flex flex-col items-center text-center">
+          <div class="mb-6 p-5 bg-white rounded-3xl shadow-inner">
+            <qrcode-vue :value="shareLink" :size="180" level="L" render-as="canvas" />
+          </div>
+          <h3 class="text-lg font-black text-burner-text mb-1 uppercase tracking-tight">Share This Email</h3>
+          <p class="text-xs text-burner-text-dim mb-6">Scan the QR code or copy the link below to share only the email content.</p>
+          
+          <div class="w-full bg-burner-dark border border-burner-border rounded-xl p-3 mb-4">
+            <p class="text-[10px] text-burner-text-dim break-all font-mono leading-relaxed line-clamp-3">{{ shareLink }}</p>
+          </div>
+
+          <button @click="copyToClipboard(shareLink)" class="w-full flex items-center justify-center gap-3 bg-burner-accent hover:bg-burner-accent/80 text-white font-black py-3.5 rounded-2xl transition-all active:scale-[0.98] text-sm">
+            <component :is="copyStatus === 'Copied!' ? CheckCircle2 : Copy" class="w-4 h-4" />
+            {{ copyStatus === 'Copied!' ? 'LINK COPIED!' : 'COPY SHARE LINK' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
