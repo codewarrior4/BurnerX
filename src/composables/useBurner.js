@@ -187,9 +187,201 @@ export const downloadAttachment = async (attachment) => {
     }
 }
 
+// --- Browser Notifications (Feature 4) ---
+export const notificationsEnabled = ref(false)
+
+export const requestNotificationPermission = async () => {
+    if (!('Notification' in window)) return
+    if (Notification.permission === 'granted') {
+        notificationsEnabled.value = true
+        return
+    }
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission()
+        notificationsEnabled.value = permission === 'granted'
+    }
+}
+
+const sendNotification = (title, body) => {
+    if (!notificationsEnabled.value) return
+    try {
+        new Notification(title, {
+            body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'burnerx-new-mail'
+        })
+    } catch (e) { }
+}
+
+let previousMessageCount = 0
+
+// --- Export (Feature 6) ---
+export const exportEmailAsJSON = (message) => {
+    if (!message) return
+    const data = {
+        id: message.id,
+        subject: message.subject,
+        from: message.from,
+        to: message.to,
+        cc: message.cc,
+        date: message.createdAt,
+        intro: message.intro,
+        hasAttachments: message.hasAttachments,
+        attachments: message.attachments
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `email-${message.subject?.replace(/[^a-z0-9]/gi, '_').slice(0, 30) || message.id}.json`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
+}
+
+export const exportEmailAsHTML = (message, htmlContent) => {
+    if (!message) return
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${message.subject || 'Email'}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #1a1a1a; }
+    .header { border-bottom: 2px solid #7c3aed; padding-bottom: 20px; margin-bottom: 30px; }
+    .header h1 { color: #7c3aed; margin: 0 0 10px 0; }
+    .meta { color: #666; font-size: 14px; line-height: 1.8; }
+    .meta strong { color: #333; }
+    .content { line-height: 1.6; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${message.subject || '(No Subject)'}</h1>
+    <div class="meta">
+      <strong>From:</strong> ${message.from.name || ''} &lt;${message.from.address}&gt;<br>
+      <strong>To:</strong> ${message.to?.map(r => r.address).join(', ') || 'N/A'}<br>
+      <strong>Date:</strong> ${new Date(message.createdAt).toLocaleString()}
+    </div>
+  </div>
+  <div class="content">${htmlContent || '<p>No content available.</p>'}</div>
+  <div class="footer">Exported from BurnerX</div>
+</body>
+</html>`
+    const blob = new Blob([html], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `email-${message.subject?.replace(/[^a-z0-9]/gi, '_').slice(0, 30) || message.id}.html`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
+}
+
+export const exportIdentityBackup = () => {
+    const backup = {
+        exportedAt: new Date().toISOString(),
+        identities: identities.value.map(i => ({
+            address: i.address,
+            password: i.password,
+            label: i.label || '',
+            createdAt: i.createdAt
+        }))
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `burnerx-backup-${new Date().toISOString().slice(0, 10)}.json`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
+}
+
+export const isImporting = ref(false)
+
+export const importIdentityBackup = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        isImporting.value = true
+        try {
+            const text = await file.text()
+            const backup = JSON.parse(text)
+
+            if (!backup.identities || !Array.isArray(backup.identities)) {
+                alert('Invalid backup file format.')
+                return
+            }
+
+            let imported = 0
+            let skipped = 0
+            let failed = 0
+
+            for (const entry of backup.identities) {
+                // Skip if already exists
+                if (identities.value.some(i => i.address === entry.address)) {
+                    skipped++
+                    continue
+                }
+
+                // If we have a password, try to re-authenticate
+                if (entry.password) {
+                    try {
+                        const tokenRes = await axios.post(`${API_BASE}/token`, {
+                            address: entry.address,
+                            password: entry.password
+                        })
+
+                        // Get the account ID
+                        const meRes = await axios.get(`${API_BASE}/me`, {
+                            headers: { Authorization: `Bearer ${tokenRes.data.token}` }
+                        })
+
+                        const restoredIdentity = {
+                            id: meRes.data.id,
+                            address: entry.address,
+                            password: entry.password,
+                            token: tokenRes.data.token,
+                            label: entry.label || '',
+                            createdAt: entry.createdAt || new Date().toISOString()
+                        }
+
+                        identities.value.push(restoredIdentity)
+                        imported++
+                    } catch (err) {
+                        // Account may have expired or been deleted
+                        failed++
+                    }
+                } else {
+                    failed++
+                }
+            }
+
+            if (imported > 0) {
+                saveIdentities()
+                if (!currentAccount.value) {
+                    currentAccount.value = identities.value[0]
+                }
+            }
+
+            alert(`Import complete!\n✅ Restored: ${imported}\n⏭️ Skipped (already exists): ${skipped}\n❌ Failed (expired/deleted): ${failed}`)
+        } catch (err) {
+            alert('Failed to read backup file. Make sure it\'s a valid BurnerX backup JSON.')
+        } finally {
+            isImporting.value = false
+        }
+    }
+    input.click()
+}
+
+
 // Initializer
 export const initBurner = () => {
-    onMounted(() => {
+    onMounted(async () => {
         // Load Identities
         const savedIdentities = localStorage.getItem(STORAGE_KEY)
         if (savedIdentities) {
@@ -203,10 +395,30 @@ export const initBurner = () => {
         else isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
         updateTheme()
 
+        // Request Notification Permission
+        await requestNotificationPermission()
+
+        // Fetch domains early
+        try {
+            domains.value = await getDomains()
+        } catch (e) { }
+
         if (!currentAccount.value) createAccount()
         else fetchMessages()
 
-        setInterval(fetchMessages, 5000)
+        // Polling with notification detection
+        previousMessageCount = messages.value.length
+        setInterval(async () => {
+            await fetchMessages()
+            if (messages.value.length > previousMessageCount && previousMessageCount > 0) {
+                const newMsg = messages.value[0]
+                sendNotification(
+                    `📬 New email from ${newMsg.from.name || newMsg.from.address.split('@')[0]}`,
+                    newMsg.subject || '(No Subject)'
+                )
+            }
+            previousMessageCount = messages.value.length
+        }, 5000)
     })
 
     watch(currentAccount, (newVal) => {

@@ -1,11 +1,12 @@
 <script setup>
 import { ref } from 'vue'
 import { 
-  ShieldCheck, X, RefreshCw, Plus, ChevronRight, Trash2, Edit3, Check, Sun, Moon 
+  ShieldCheck, X, RefreshCw, Plus, ChevronRight, Trash2, Edit3, Check, Sun, Moon, HardDriveDownload, HardDriveUpload, Loader2 
 } from 'lucide-vue-next'
 import { 
   identities, currentAccount, createAccount, deleteIdentity, 
-  isSidebarOpen, saveIdentities, isDarkMode, toggleTheme, isLoading
+  isSidebarOpen, saveIdentities, isDarkMode, toggleTheme, isLoading,
+  exportIdentityBackup, importIdentityBackup, isImporting
 } from '../composables/useBurner'
 
 const isCustomizing = ref(false)
@@ -119,10 +120,19 @@ const vFocus = { mounted: (el) => el.focus() }
         <div class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
         CONNECTED
       </div>
-      <button @click="toggleTheme" class="p-2 rounded-lg bg-burner-text-dim/5 text-burner-text-dim hover:text-burner-accent transition-all">
-        <Sun v-if="isDarkMode" class="w-4 h-4"></Sun>
-        <Moon v-else class="w-4 h-4"></Moon>
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button @click="importIdentityBackup" :disabled="isImporting" class="p-2 rounded-lg bg-burner-text-dim/5 text-burner-text-dim hover:text-burner-accent transition-all disabled:opacity-50" title="Import Identity Backup">
+          <Loader2 v-if="isImporting" class="w-4 h-4 animate-spin" />
+          <HardDriveUpload v-else class="w-4 h-4" />
+        </button>
+        <button @click="exportIdentityBackup" class="p-2 rounded-lg bg-burner-text-dim/5 text-burner-text-dim hover:text-burner-accent transition-all" title="Export Identity Backup">
+          <HardDriveDownload class="w-4 h-4" />
+        </button>
+        <button @click="toggleTheme" class="p-2 rounded-lg bg-burner-text-dim/5 text-burner-text-dim hover:text-burner-accent transition-all">
+          <Sun v-if="isDarkMode" class="w-4 h-4"></Sun>
+          <Moon v-else class="w-4 h-4"></Moon>
+        </button>
+      </div>
     </div>
   </aside>
 </template>

@@ -1,10 +1,14 @@
 <script setup>
-import { ArrowLeft, Code2, Download } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { ArrowLeft, Code2, Download, FileJson, FileText, ChevronDown } from 'lucide-vue-next'
 import { 
   selectedMessage, messageContent, messageSource, isViewingSource, 
-  fetchMessageSource, downloadAttachment, showDetailOnMobile 
+  fetchMessageSource, downloadAttachment, showDetailOnMobile,
+  exportEmailAsJSON, exportEmailAsHTML
 } from '../composables/useBurner'
 import IdentityCard from './IdentityCard.vue'
+
+const showExportMenu = ref(false)
 </script>
 
 <template>
@@ -19,10 +23,29 @@ import IdentityCard from './IdentityCard.vue'
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <h1 class="text-xl lg:text-3xl font-black text-burner-text leading-tight">{{ selectedMessage.subject }}</h1>
           <div class="flex items-center gap-2">
-            <button @click="fetchMessageSource" class="p-2.5 bg-burner-card border border-burner-border rounded-xl text-burner-text-dim hover:text-burner-accent transition-all">
+            <button @click="fetchMessageSource" class="p-2.5 bg-burner-card border border-burner-border rounded-xl text-burner-text-dim hover:text-burner-accent transition-all" title="View Source">
               <Code2 class="w-5 h-5"></Code2>
             </button>
-            <div class="text-[10px] font-black tracking-widest text-burner-text-dim px-4 py-2 bg-burner-card border border-burner-border rounded-full uppercase">
+
+            <!-- Export Dropdown -->
+            <div class="relative">
+              <button @click="showExportMenu = !showExportMenu" class="p-2.5 bg-burner-card border border-burner-border rounded-xl text-burner-text-dim hover:text-burner-accent transition-all flex items-center gap-1" title="Export">
+                <Download class="w-5 h-5" />
+                <ChevronDown :class="['w-3 h-3 transition-transform', showExportMenu ? 'rotate-180' : '']" />
+              </button>
+              <div v-if="showExportMenu" class="absolute right-0 top-full mt-2 bg-burner-card border border-burner-border rounded-2xl shadow-2xl p-2 z-50 w-52">
+                <button @click="exportEmailAsJSON(selectedMessage); showExportMenu = false" class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-burner-text-dim hover:text-burner-accent hover:bg-burner-accent/10 rounded-xl transition-all">
+                  <FileJson class="w-4 h-4" />
+                  Export as JSON
+                </button>
+                <button @click="exportEmailAsHTML(selectedMessage, messageContent); showExportMenu = false" class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-burner-text-dim hover:text-burner-accent hover:bg-burner-accent/10 rounded-xl transition-all">
+                  <FileText class="w-4 h-4" />
+                  Export as HTML
+                </button>
+              </div>
+            </div>
+
+            <div class="text-[10px] font-black tracking-widest text-burner-text-dim px-4 py-2 bg-burner-card border border-burner-border rounded-full uppercase hidden lg:block">
               {{ new Date(selectedMessage.createdAt).toLocaleString() }}
             </div>
           </div>
@@ -82,14 +105,14 @@ import IdentityCard from './IdentityCard.vue'
             </div>
           </div>
 
-          <div class="bg-burner-card/50 rounded-[2.5rem] border border-burner-border p-6 lg:p-12 shadow-2xl backdrop-blur-sm">
+          <div class="bg-burner-card/50 rounded-[1.5rem] border border-burner-border p-6 lg:p-12 shadow-2xl backdrop-blur-sm">
             <div class="email-content prose-burner prose prose-invert max-w-none" v-html="messageContent"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Central Identity Dashboard (QR Centered) -->
+    <!-- Central Identity Dashboard (QR + Domain Picker) -->
     <div v-else class="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
       <IdentityCard />
     </div>
