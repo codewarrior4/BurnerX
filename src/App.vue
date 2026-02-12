@@ -20,7 +20,9 @@ import {
   X,
   Sun,
   Moon,
-  ArrowLeft
+  ArrowLeft,
+  Edit3,
+  Check
 } from 'lucide-vue-next'
 
 const API_BASE = 'https://api.mail.tm'
@@ -37,6 +39,8 @@ const messageContent = ref('')
 const messageSource = ref('')
 const isViewingSource = ref(false)
 const copyStatus = ref('Copy')
+const editingLabelId = ref(null)
+const tempLabel = ref('')
 
 // --- Mobile & UI State ---
 const isSidebarOpen = ref(false)
@@ -227,6 +231,17 @@ const deleteIdentity = async (id) => {
   }
 }
 
+const startEditingLabel = (idnt) => {
+  editingLabelId.value = idnt.id
+  tempLabel.value = idnt.label || ''
+}
+
+const saveLabel = (idnt) => {
+  idnt.label = tempLabel.value
+  saveIdentities()
+  editingLabelId.value = null
+}
+
 const copyToClipboard = async (text) => {
   await navigator.clipboard.writeText(text)
   copyStatus.value = 'Copied!'
@@ -248,6 +263,11 @@ watch(currentAccount, (newVal) => {
     showDetailOnMobile.value = false
   }
 })
+
+// Custom directive for focus
+const vFocus = {
+  mounted: (el) => el.focus()
+}
 </script>
 
 <template>
@@ -306,10 +326,31 @@ watch(currentAccount, (newVal) => {
 
       <div class="flex-1 overflow-y-auto px-4 pb-10 space-y-2">
         <div v-for="idnt in identities" :key="idnt.id" @click="currentAccount = idnt; isSidebarOpen = false" :class="['group relative p-3 rounded-xl cursor-pointer transition-all border outline-none', currentAccount?.id === idnt.id ? 'bg-burner-accent/10 border-burner-accent/30' : 'bg-transparent border-transparent hover:bg-burner-text-dim/5']">
-          <div class="flex items-center justify-between">
-            <div class="flex flex-col min-w-0">
-              <span :class="['text-xs font-medium truncate', currentAccount?.id === idnt.id ? 'text-burner-accent' : 'text-burner-text-dim']">{{ idnt.address.split('@')[0] }}</span>
-              <span class="text-[10px] text-burner-text-dim/60 truncate">{{ idnt.address.split('@')[1] }}</span>
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex flex-col min-w-0 flex-1">
+              <div v-if="editingLabelId === idnt.id" class="flex items-center gap-1 mb-1">
+                <input 
+                  v-model="tempLabel" 
+                  class="w-full bg-burner-dark border border-burner-accent/50 rounded px-2 py-0.5 text-[10px] text-burner-text focus:outline-none focus:ring-1 focus:ring-burner-accent/50"
+                  @click.stop
+                  @keyup.enter="saveLabel(idnt)"
+                  v-focus
+                />
+                <button @click.stop="saveLabel(idnt)" class="text-burner-accent"><Check class="w-3 h-3" /></button>
+              </div>
+              <div v-else class="flex items-center gap-1.5 group/label mb-0.5">
+                <span :class="['text-[11px] font-black tracking-tight truncate', currentAccount?.id === idnt.id ? 'text-burner-accent' : 'text-burner-text']">
+                  {{ idnt.label || idnt.address.split('@')[0] }}
+                </span>
+                <button 
+                  v-if="currentAccount?.id === idnt.id"
+                  @click.stop="startEditingLabel(idnt)" 
+                  class="opacity-0 group-hover:opacity-100 lg:group-hover/label:opacity-100 transition-opacity text-burner-text-dim hover:text-burner-accent"
+                >
+                  <Edit3 class="w-2.5 h-2.5" />
+                </button>
+              </div>
+              <span class="text-[9px] text-burner-text-dim/60 truncate italic">{{ idnt.address }}</span>
             </div>
             <button @click.stop="deleteIdentity(idnt.id)" class="opacity-0 group-hover:opacity-100 p-1.5 text-burner-text-dim hover:text-red-500 transition-all"><Trash2 class="w-3.5 h-3.5"></Trash2></button>
           </div>
