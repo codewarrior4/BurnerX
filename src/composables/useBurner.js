@@ -1,4 +1,4 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 
 const API_BASE = 'https://api.mail.tm'
@@ -22,6 +22,17 @@ export const searchQuery = ref('')
 // Mobile State
 export const isSidebarOpen = ref(false)
 export const showDetailOnMobile = ref(false)
+
+export const filteredMessages = computed(() => {
+    if (!searchQuery.value) return messages.value
+    const query = searchQuery.value.toLowerCase()
+    return messages.value.filter(msg =>
+        msg.subject?.toLowerCase().includes(query) ||
+        msg.from.name?.toLowerCase().includes(query) ||
+        msg.from.address?.toLowerCase().includes(query) ||
+        msg.intro?.toLowerCase().includes(query)
+    )
+})
 
 // Utils
 export const getRandomString = (length) => Math.random().toString(36).substring(2, 2 + length)
