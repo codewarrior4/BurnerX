@@ -281,10 +281,10 @@ export const exportEmailAsHTML = (message, htmlContent) => {
 export const generateShareLink = (message, htmlContent) => {
     if (!message) return null
 
-    // QR codes have limits. We'll truncate the body if it's too huge to keep it scanable.
+    // QR codes have limits. We'll truncate the body aggressively to keep it scanable.
     let sharedBody = htmlContent || '<p>No content</p>'
-    if (sharedBody.length > 2000) {
-        sharedBody = sharedBody.substring(0, 2000) + '<p>...[Content truncated for sharing]</p>'
+    if (sharedBody.length > 500) {
+        sharedBody = sharedBody.substring(0, 500) + '<p>...[Content truncated]</p>'
     }
 
     const payload = {

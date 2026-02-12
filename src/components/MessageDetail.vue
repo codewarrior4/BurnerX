@@ -39,6 +39,10 @@ const handleShare = () => {
               <Code2 class="w-5 h-5"></Code2>
             </button>
 
+            <button @click="handleShare" class="p-2.5 bg-burner-card border border-burner-border rounded-xl text-burner-text-dim hover:text-burner-accent transition-all" title="Share Email via QR">
+              <Share2 class="w-5 h-5" />
+            </button>
+
             <!-- Export Dropdown -->
             <div class="relative">
               <button @click="showExportMenu = !showExportMenu" class="p-2.5 bg-burner-card border border-burner-border rounded-xl text-burner-text-dim hover:text-burner-accent transition-all flex items-center gap-1" title="Export">
@@ -46,11 +50,6 @@ const handleShare = () => {
                 <ChevronDown :class="['w-3 h-3 transition-transform', showExportMenu ? 'rotate-180' : '']" />
               </button>
               <div v-if="showExportMenu" class="absolute right-0 top-full mt-2 bg-burner-card border border-burner-border rounded-2xl shadow-2xl p-2 z-50 w-52">
-                <button @click="handleShare" class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-burner-text-dim hover:text-burner-accent hover:bg-burner-accent/10 rounded-xl transition-all">
-                  <Share2 class="w-4 h-4" />
-                  Share via QR / Link
-                </button>
-                <div class="h-px bg-burner-border my-1"></div>
                 <button @click="exportEmailAsJSON(selectedMessage); showExportMenu = false" class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-burner-text-dim hover:text-burner-accent hover:bg-burner-accent/10 rounded-xl transition-all">
                   <FileJson class="w-4 h-4" />
                   Export as JSON
@@ -143,7 +142,7 @@ const handleShare = () => {
         </button>
         <div class="flex flex-col items-center text-center">
           <div class="mb-6 p-5 bg-white rounded-3xl shadow-inner overflow-hidden flex items-center justify-center">
-            <qrcode-vue :value="shareLink" :size="200" level="M" render-as="svg" margin="2" />
+            <qrcode-vue :value="shareLink" :size="200" level="Q" render-as="svg" margin="3" />
           </div>
           <h3 class="text-lg font-black text-burner-text mb-1 uppercase tracking-tight">Share This Email</h3>
           <p class="text-xs text-burner-text-dim mb-6">Scan the QR code or copy the link below to share only the email content.</p>
