@@ -18,6 +18,7 @@ export const isViewingSource = ref(false)
 export const copyStatus = ref('Copy')
 export const isDarkMode = ref(true)
 export const searchQuery = ref('')
+export const domains = ref([])
 
 // Mobile State
 export const isSidebarOpen = ref(false)
@@ -68,11 +69,13 @@ export const getDomains = async () => {
     return res.data['hydra:member']
 }
 
-export const createAccount = async (prefix = '') => {
+export const createAccount = async (prefix = '', customDomain = '') => {
     isLoading.value = true
     try {
-        const domains = await getDomains()
-        const domain = domains[0].domain
+        if (domains.value.length === 0) {
+            domains.value = await getDomains()
+        }
+        const domain = customDomain || domains.value[0].domain
         const address = prefix ? `${prefix.toLowerCase()}@${domain}` : `${getRandomString(10)}@${domain}`
         const password = getRandomString(12)
 

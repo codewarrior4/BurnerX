@@ -1,14 +1,15 @@
 <script setup>
-import { ArrowLeft, Code2, Download, Mail } from 'lucide-vue-next'
+import { ArrowLeft, Code2, Download } from 'lucide-vue-next'
 import { 
   selectedMessage, messageContent, messageSource, isViewingSource, 
   fetchMessageSource, downloadAttachment, showDetailOnMobile 
 } from '../composables/useBurner'
+import IdentityCard from './IdentityCard.vue'
 </script>
 
 <template>
   <div :class="['flex-1 bg-burner-dark relative flex flex-col overflow-hidden lg:flex', showDetailOnMobile ? 'flex' : 'hidden']">
-    <div v-if="selectedMessage" class="flex-1 flex flex-col overflow-hidden">
+    <div v-if="selectedMessage" class="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500">
       
       <div class="p-4 lg:p-8 border-b border-burner-border bg-burner-card/40 backdrop-blur-sm">
         <button @click="showDetailOnMobile = false" class="lg:hidden flex items-center gap-2 text-xs font-bold text-burner-accent mb-6">
@@ -88,13 +89,9 @@ import {
       </div>
     </div>
 
-    <div v-else class="flex-1 flex flex-col items-center justify-center text-center p-12">
-      <div class="relative mb-8 h-20 w-20 flex items-center justify-center">
-        <div class="absolute inset-0 bg-burner-accent opacity-20 blur-3xl rounded-full animate-pulse"></div>
-        <Mail class="w-12 h-12 text-burner-accent relative z-10"></Mail>
-      </div>
-      <h2 class="text-xl font-black text-burner-text mb-3 uppercase tracking-wider">Empty Inbox</h2>
-      <p class="text-sm text-burner-text-dim max-w-xs font-medium">Select a dummy message to inspect the payload and attachments.</p>
+    <!-- Central Identity Dashboard (QR Centered) -->
+    <div v-else class="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
+      <IdentityCard />
     </div>
   </div>
 </template>
