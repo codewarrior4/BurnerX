@@ -417,26 +417,23 @@ export const initBurner = () => {
         // --- Synchronization Logic (Feature 8) ---
         const urlParams = new URLSearchParams(window.location.search)
         const syncData = urlParams.get('sync')
-        let syncAttempted = false
+        let syncAttempted = !!syncData
 
         if (syncData) {
-            syncAttempted = true
             try {
                 const decoded = atob(syncData)
-                const [address, password] = decoded.split(':')
+                const [address, password, accountId] = decoded.split(':')
 
-                if (!address || !password) throw new Error('Invalid sync data')
+                if (!address || !password || !accountId) throw new Error('Invalid sync data')
 
                 isLoading.value = true
+                console.log('Syncing identity:', address)
 
-                // Re-authenticate
+                // Re-authenticate to get a fresh token
                 const tokenRes = await axios.post(`${API_BASE}/token`, { address, password })
-                const accountRes = await axios.get(`${API_BASE}/accounts/me`, {
-                    headers: { Authorization: `Bearer ${tokenRes.data.token}` }
-                })
 
                 const syncedIdentity = {
-                    id: accountRes.data.id,
+                    id: accountId,
                     address,
                     password,
                     token: tokenRes.data.token,
@@ -444,53 +441,49 @@ export const initBurner = () => {
                     createdAt: new Date().toISOString()
                 }
 
+                // Load existing identities
                 const saved = localStorage.getItem(STORAGE_KEY)
                 let existing = saved ? JSON.parse(saved) : []
+
+                // Add and move to top
                 existing = [syncedIdentity, ...existing.filter(i => i.address !== address)].slice(0, 10)
 
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
                 identities.value = existing
                 currentAccount.value = syncedIdentity
 
+                // Clean URL
                 window.history.replaceState({}, document.title, window.location.pathname)
             } catch (err) {
                 console.error('Sync failed:', err)
-                // If sync fails, don't clean URL yet so user can see it's attempting, 
-                // but let standard load take over below
             } finally {
                 isLoading.value = false
-                // Assuming isCreatingAccount is related to the sync process or a general loading state
-                // and should be reset here if it was set before this try block.
-                // If isCreatingAccount is specific to the createAccount() function,
-                // this line might be misplaced. However, based on the instruction,
-                // it's added here.
-                // If this is for a different try/catch, the instruction's context was misleading.
-                isCreatingAccount = false
             }
         }
 
-        // Standard Load (only if sync didn't set currentAccount)
+        // Standard Load (if nothing set by sync)
         if (!currentAccount.value) {
             const saved = localStorage.getItem(STORAGE_KEY)
             if (saved) {
                 const parsed = JSON.parse(saved)
                 if (parsed && parsed.length > 0) {
-                    identities.value = parsed
-                    currentAccount.value = parsed[0]
+                    // Filter out any broken entries
+                    identities.value = parsed.filter(i => i && i.address && i.token)
+                    if (identities.value.length > 0) {
+                        currentAccount.value = identities.value[0]
+                    }
                 }
             }
         }
 
-        // Request Notification Permission
-        await requestNotificationPermission()
-
-        // Fetch domains and setup account if still totally empty
+        // Fetch domains only if we need them
         try {
             if (domains.value.length === 0) domains.value = await getDomains()
         } catch (e) { }
 
-        // FINAL CHECK: Only create a new account if we literally have nothing
-        if (!currentAccount.value && !syncAttempted) {
+        // FINAL CHECK: Only create if we have NO identities at all
+        if (identities.value.length === 0 && !syncAttempted) {
+            console.log('No accounts found, creating initial account...')
             createAccount()
         } else if (currentAccount.value) {
             fetchMessages()
