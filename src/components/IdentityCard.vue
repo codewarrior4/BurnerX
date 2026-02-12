@@ -38,7 +38,7 @@ const downloadQR = () => {
       <div class="flex flex-col items-center text-center relative z-10">
         <!-- QR Code (compact) -->
         <button @click="showQR = true" class="mb-6 p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer" title="Click to enlarge">
-          <qrcode-vue :value="currentAccount.address" :size="120" level="H" />
+          <qrcode-vue :value="currentAccount.address" :size="120" level="H" render-as="svg" margin="2" />
         </button>
 
         <div class="space-y-1 mb-6">
@@ -113,7 +113,7 @@ const downloadQR = () => {
         </button>
         <div class="flex flex-col items-center text-center">
           <div class="mb-6 p-6 bg-white rounded-3xl shadow-inner">
-            <qrcode-vue :value="currentAccount.address" :size="200" level="H" render-as="canvas" />
+            <qrcode-vue :value="currentAccount.address" :size="200" level="H" render-as="svg" margin="2" />
           </div>
           <h3 class="text-lg font-black text-burner-text mb-1 uppercase tracking-tight">Scan to Copy</h3>
           <p class="text-xs text-burner-text-dim mb-6">{{ currentAccount.address }}</p>
