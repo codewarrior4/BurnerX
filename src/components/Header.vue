@@ -1,0 +1,32 @@
+<script setup>
+import { Menu, CheckCircle2, Copy, RefreshCw } from 'lucide-vue-next'
+import { 
+  currentAccount, copyToClipboard, copyStatus, isPolling, 
+  fetchMessages, isSidebarOpen 
+} from '../composables/useBurner'
+</script>
+
+<template>
+  <header class="h-20 border-b border-burner-border flex items-center justify-between px-4 lg:px-8 bg-burner-dark/80 backdrop-blur-md z-30">
+    <div class="flex items-center gap-4 min-w-0">
+      <button @click="isSidebarOpen = true" class="lg:hidden p-2 text-burner-text-dim hover:text-burner-text transition-colors">
+        <Menu class="w-6 h-6"></Menu>
+      </button>
+      <div v-if="currentAccount" class="flex flex-col min-w-0">
+        <h2 class="text-[9px] text-burner-text-dim uppercase tracking-widest font-black">Current Address</h2>
+        <div class="flex items-center gap-3">
+          <span class="text-sm lg:text-lg font-bold text-burner-text truncate">{{ currentAccount.address }}</span>
+          <button @click="copyToClipboard(currentAccount.address)" class="shrink-0 p-1.5 bg-burner-accent/10 hover:bg-burner-accent/20 text-burner-accent rounded-full border border-burner-accent/20 transition-all">
+            <component :is="copyStatus === 'Copied!' ? CheckCircle2 : Copy" class="w-3.5 h-3.5"></component>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4 shrink-0">
+      <button @click="fetchMessages" class="p-2 text-burner-text-dim hover:text-burner-accent transition-colors">
+        <RefreshCw :class="['w-5 h-5', isPolling ? 'animate-spin' : '']"></RefreshCw>
+      </button>
+    </div>
+  </header>
+</template>
