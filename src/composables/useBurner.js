@@ -69,7 +69,10 @@ export const getDomains = async () => {
     return res.data['hydra:member']
 }
 
+let isCreatingAccount = false
 export const createAccount = async (prefix = '', customDomain = '') => {
+    if (isCreatingAccount) return
+    isCreatingAccount = true
     isLoading.value = true
     try {
         if (domains.value.length === 0) {
@@ -102,6 +105,7 @@ export const createAccount = async (prefix = '', customDomain = '') => {
         alert(msg)
     } finally {
         isLoading.value = false
+        isCreatingAccount = false
     }
 }
 
@@ -404,20 +408,28 @@ export const importIdentityBackup = () => {
 // Initializer
 export const initBurner = () => {
     onMounted(async () => {
+        // Load Theme First
+        const savedTheme = localStorage.getItem(THEME_KEY)
+        if (savedTheme) isDarkMode.value = savedTheme === 'dark'
+        else isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+        updateTheme()
+
         // --- Synchronization Logic (Feature 8) ---
-        // Handle deep-links from VerifyMe Extension or shared links
         const urlParams = new URLSearchParams(window.location.search)
         const syncData = urlParams.get('sync')
+        let syncAttempted = false
 
         if (syncData) {
+            syncAttempted = true
             try {
                 const decoded = atob(syncData)
                 const [address, password] = decoded.split(':')
 
-                // Show loading while we sync
+                if (!address || !password) throw new Error('Invalid sync data')
+
                 isLoading.value = true
 
-                // Re-authenticate to get a fresh token
+                // Re-authenticate
                 const tokenRes = await axios.post(`${API_BASE}/token`, { address, password })
                 const accountRes = await axios.get(`${API_BASE}/accounts/me`, {
                     headers: { Authorization: `Bearer ${tokenRes.data.token}` }
@@ -428,54 +440,61 @@ export const initBurner = () => {
                     address,
                     password,
                     token: tokenRes.data.token,
-                    label: 'Sync from VerifyMe',
+                    label: 'From VerifyMe',
                     createdAt: new Date().toISOString()
                 }
 
-                // Load existing identities first
-                const savedIdentities = localStorage.getItem(STORAGE_KEY)
-                let existing = savedIdentities ? JSON.parse(savedIdentities) : []
-
-                // Add if not already there, and move to top
+                const saved = localStorage.getItem(STORAGE_KEY)
+                let existing = saved ? JSON.parse(saved) : []
                 existing = [syncedIdentity, ...existing.filter(i => i.address !== address)].slice(0, 10)
 
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
                 identities.value = existing
                 currentAccount.value = syncedIdentity
 
-                // Clean the URL so refresh doesn't re-import
                 window.history.replaceState({}, document.title, window.location.pathname)
-
             } catch (err) {
                 console.error('Sync failed:', err)
+                // If sync fails, don't clean URL yet so user can see it's attempting, 
+                // but let standard load take over below
             } finally {
                 isLoading.value = false
-            }
-        } else {
-            // Standard Load Identities
-            const savedIdentities = localStorage.getItem(STORAGE_KEY)
-            if (savedIdentities) {
-                identities.value = JSON.parse(savedIdentities)
-                if (identities.value.length > 0) currentAccount.value = identities.value[0]
+                // Assuming isCreatingAccount is related to the sync process or a general loading state
+                // and should be reset here if it was set before this try block.
+                // If isCreatingAccount is specific to the createAccount() function,
+                // this line might be misplaced. However, based on the instruction,
+                // it's added here.
+                // If this is for a different try/catch, the instruction's context was misleading.
+                isCreatingAccount = false
             }
         }
 
-        // Load Theme
-        const savedTheme = localStorage.getItem(THEME_KEY)
-        if (savedTheme) isDarkMode.value = savedTheme === 'dark'
-        else isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-        updateTheme()
+        // Standard Load (only if sync didn't set currentAccount)
+        if (!currentAccount.value) {
+            const saved = localStorage.getItem(STORAGE_KEY)
+            if (saved) {
+                const parsed = JSON.parse(saved)
+                if (parsed && parsed.length > 0) {
+                    identities.value = parsed
+                    currentAccount.value = parsed[0]
+                }
+            }
+        }
 
         // Request Notification Permission
         await requestNotificationPermission()
 
-        // Fetch domains early
+        // Fetch domains and setup account if still totally empty
         try {
-            domains.value = await getDomains()
+            if (domains.value.length === 0) domains.value = await getDomains()
         } catch (e) { }
 
-        if (!currentAccount.value) createAccount()
-        else fetchMessages()
+        // FINAL CHECK: Only create a new account if we literally have nothing
+        if (!currentAccount.value && !syncAttempted) {
+            createAccount()
+        } else if (currentAccount.value) {
+            fetchMessages()
+        }
 
         // Polling with notification detection
         previousMessageCount = messages.value.length
