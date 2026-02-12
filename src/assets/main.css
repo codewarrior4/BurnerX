@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-burner-dark: var(--bg-primary);
+  --color-burner-card: var(--bg-secondary);
+  --color-burner-accent: var(--accent);
+  --color-burner-glow: var(--accent-glow);
+  --color-burner-text: var(--text-primary);
+  --color-burner-text-dim: var(--text-secondary);
+  --color-burner-border: var(--border-color);
+}
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --accent: #7c3aed;
+  --accent-glow: #c4b5fd;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  color-scheme: light;
+}
+
+.dark {
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #161618;
+  --accent: #8b5cf6;
+  --accent-glow: #d8b4fe;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #1e1e24;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--text-secondary), 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--text-secondary), 0.3);
+}
+
+/* Animations */
+@keyframes glow {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* We avoid @apply in global CSS for standard utilities to prevent build issues with v4 sometimes */
+.prose-burner {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .prose-burner {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
