@@ -141,9 +141,10 @@ const handleShare = () => {
           <X class="w-5 h-5" />
         </button>
         <div class="flex flex-col items-center text-center">
-          <div class="mb-6 p-5 bg-white rounded-3xl shadow-inner overflow-hidden flex items-center justify-center">
-            <qrcode-vue :value="shareLink" :size="200" level="Q" render-as="svg" margin="3" />
+          <div class="mb-6 p-5 bg-white rounded-3xl shadow-inner overflow-hidden flex items-center justify-center border border-burner-border/10">
+            <qrcode-vue :value="shareLink" :size="220" level="L" render-as="svg" margin="2" />
           </div>
+
           <h3 class="text-lg font-black text-burner-text mb-1 uppercase tracking-tight">Share This Email</h3>
           <p class="text-xs text-burner-text-dim mb-6">Scan the QR code or copy the link below to share only the email content.</p>
           

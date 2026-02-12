@@ -17,19 +17,26 @@ onMounted(() => {
     const decoded = decodeURIComponent(atob(hash))
     const parsed = JSON.parse(decoded)
     
-    if (!parsed.subject && !parsed.body) {
+    // Support both minified and full keys
+    emailData.value = {
+      subject: parsed.s || parsed.subject || '',
+      from: parsed.f ? { address: parsed.f } : parsed.from,
+      date: parsed.d || parsed.date,
+      body: parsed.b || parsed.body
+    }
+
+    if (!emailData.value.subject && !emailData.value.body) {
       error.value = 'Invalid email share link.'
       loading.value = false
       return
     }
-    
-    emailData.value = parsed
   } catch (e) {
     error.value = 'This share link is corrupted or invalid.'
   } finally {
     loading.value = false
   }
 })
+
 </script>
 
 <template>
