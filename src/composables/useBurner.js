@@ -404,11 +404,60 @@ export const importIdentityBackup = () => {
 // Initializer
 export const initBurner = () => {
     onMounted(async () => {
-        // Load Identities
-        const savedIdentities = localStorage.getItem(STORAGE_KEY)
-        if (savedIdentities) {
-            identities.value = JSON.parse(savedIdentities)
-            if (identities.value.length > 0) currentAccount.value = identities.value[0]
+        // --- Synchronization Logic (Feature 8) ---
+        // Handle deep-links from VerifyMe Extension or shared links
+        const urlParams = new URLSearchParams(window.location.search)
+        const syncData = urlParams.get('sync')
+
+        if (syncData) {
+            try {
+                const decoded = atob(syncData)
+                const [address, password] = decoded.split(':')
+
+                // Show loading while we sync
+                isLoading.value = true
+
+                // Re-authenticate to get a fresh token
+                const tokenRes = await axios.post(`${API_BASE}/token`, { address, password })
+                const accountRes = await axios.get(`${API_BASE}/accounts/me`, {
+                    headers: { Authorization: `Bearer ${tokenRes.data.token}` }
+                })
+
+                const syncedIdentity = {
+                    id: accountRes.data.id,
+                    address,
+                    password,
+                    token: tokenRes.data.token,
+                    label: 'Sync from VerifyMe',
+                    createdAt: new Date().toISOString()
+                }
+
+                // Load existing identities first
+                const savedIdentities = localStorage.getItem(STORAGE_KEY)
+                let existing = savedIdentities ? JSON.parse(savedIdentities) : []
+
+                // Add if not already there, and move to top
+                existing = [syncedIdentity, ...existing.filter(i => i.address !== address)].slice(0, 10)
+
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
+                identities.value = existing
+                currentAccount.value = syncedIdentity
+
+                // Clean the URL so refresh doesn't re-import
+                window.history.replaceState({}, document.title, window.location.pathname)
+
+            } catch (err) {
+                console.error('Sync failed:', err)
+            } finally {
+                isLoading.value = false
+            }
+        } else {
+            // Standard Load Identities
+            const savedIdentities = localStorage.getItem(STORAGE_KEY)
+            if (savedIdentities) {
+                identities.value = JSON.parse(savedIdentities)
+                if (identities.value.length > 0) currentAccount.value = identities.value[0]
+            }
         }
 
         // Load Theme
