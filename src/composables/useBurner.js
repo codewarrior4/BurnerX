@@ -109,13 +109,32 @@ export const createAccount = async (prefix = '', customDomain = '') => {
     }
 }
 
+const playNotificationSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3')
+    audio.volume = 0.5
+    audio.play().catch(() => { /* Browser may block until first interaction */ })
+}
+
+let lastMessageId = null
+
 export const fetchMessages = async () => {
     if (!currentAccount.value) return
     try {
         const res = await axios.get(`${API_BASE}/messages`, {
             headers: { Authorization: `Bearer ${currentAccount.value.token}` }
         })
-        messages.value = res.data['hydra:member']
+        const newMessages = res.data['hydra:member']
+
+        // Elite Polish: Sound Notification for new messages
+        if (newMessages.length > 0) {
+            const latest = newMessages[0].id
+            if (lastMessageId && lastMessageId !== latest) {
+                playNotificationSound()
+            }
+            lastMessageId = latest
+        }
+
+        messages.value = newMessages
     } catch (error) { }
 }
 
