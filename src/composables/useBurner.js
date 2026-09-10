@@ -1,7 +1,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 
-const API_BASE = import.meta.env.DEV ? '/api' : 'https://api.mail.tm'
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'https://api.mail.tm')).replace(/\/$/, '')
 const STORAGE_KEY = 'burnerx_identities'
 const THEME_KEY = 'burnerx_theme'
 

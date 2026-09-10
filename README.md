@@ -103,9 +103,21 @@ npm run build
 
 ---
 
+## 🌐 GitHub Pages Deployment
+
+GitHub Pages only serves static files, so it cannot run Vite's local `/api` proxy. For the live demo to call Mail.tm without browser CORS errors, deploy a small proxy such as the Cloudflare Worker in `examples/mailtm-proxy-worker.js`.
+
+After deploying the worker, add its URL as a GitHub repository variable:
+
+```text
+VITE_API_BASE_URL=https://your-worker-name.your-subdomain.workers.dev
+```
+
+Then rerun the Pages workflow. Local development continues to use Vite's `/api` proxy automatically.
+
 ## 📖 How It Works
 
-BurnerX communicates directly with the [Mail.tm API](https://api.mail.tm/) from your browser. Every time you generate an account, the credentials (email and password) are stored in your browser's `localStorage`. This allows the app to fetch a JWT token and retrieve your messages even if you close the tab.
+BurnerX communicates with the [Mail.tm API](https://api.mail.tm/) through a development or production proxy. Every time you generate an account, the credentials (email and password) are stored in your browser's `localStorage`. This allows the app to fetch a JWT token and retrieve your messages even if you close the tab.
 
 ### Key Flows
 
