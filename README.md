@@ -103,17 +103,19 @@ npm run build
 
 ---
 
-## 🌐 GitHub Pages Deployment
+## 🌐 Cloudflare Pages Deployment
 
-GitHub Pages only serves static files, so it cannot run Vite's local `/api` proxy. For the live demo to call Mail.tm without browser CORS errors, deploy a small proxy such as the Cloudflare Worker in `examples/mailtm-proxy-worker.js`.
+Cloudflare Pages can serve the Vue app and run the Mail.tm proxy in one deployment. The proxy lives in `functions/api/[[path]].js`, so app requests to `/api/domains`, `/api/accounts`, and `/api/messages` are forwarded to Mail.tm without browser CORS errors.
 
-After deploying the worker, add its URL as a GitHub repository variable:
+Use these Cloudflare Pages settings:
 
 ```text
-VITE_API_BASE_URL=https://your-worker-name.your-subdomain.workers.dev
+Build command: npm run build
+Build output directory: dist
+Deploy command: leave empty
 ```
 
-Then rerun the Pages workflow. Local development continues to use Vite's `/api` proxy automatically.
+Local development uses Vite's `/api` proxy automatically. If you deploy to a static host without serverless functions, set `VITE_API_BASE_URL` to a deployed proxy URL at build time.
 
 ## 📖 How It Works
 
